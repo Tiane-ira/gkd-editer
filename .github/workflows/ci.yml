@@ -22,10 +22,11 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Clean proxy settings for CI
+      - name: Configure CI build environment
         run: |
           sed -i '/systemProp.http/d' gradle.properties || true
           sed -i '/systemProp.https/d' gradle.properties || true
+          sed -i 's|mirrors.cloud.tencent.com/gradle|services.gradle.org/distributions|g' gradle/wrapper/gradle-wrapper.properties || true
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew

@@ -19,6 +19,7 @@ build/
 
 # Gradle files
 .gradle/
+.test-gradle-home/
 buildOutput/
 
 # Local configuration file (sdk path, etc)

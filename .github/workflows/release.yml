@@ -1,0 +1,80 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Clean proxy settings for CI
+        run: |
+          sed -i '/systemProp.http/d' gradle.properties || true
+          sed -i '/systemProp.https/d' gradle.properties || true
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Prepare Release Artifacts
+        id: prepare_artifacts
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "main" ]; then
+            TAG_NAME="${{ inputs.version }}"
+          fi
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="v1.0.0"
+          fi
+          
+          mkdir -p release-artifacts
+          RELEASE_APK=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          if [ -f "$RELEASE_APK" ]; then
+            DEST_NAME="release-artifacts/gkd-rule-studio-${TAG_NAME}.apk"
+            cp "$RELEASE_APK" "$DEST_NAME"
+            echo "apk_path=$DEST_NAME" >> $GITHUB_OUTPUT
+            echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+            echo "Artifact prepared: $DEST_NAME"
+          else
+            echo "Error: No APK found in app/build/outputs/apk/release" >&2
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.prepare_artifacts.outputs.tag_name }}
+          name: Release ${{ steps.prepare_artifacts.outputs.tag_name }}
+          files: release-artifacts/*.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

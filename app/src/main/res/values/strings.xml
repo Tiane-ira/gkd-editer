@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">GKD Rule Studio</string>
+    <string name="accessibility_service_label">GKD Rule Studio 无障碍快照服务</string>
+    <string name="accessibility_service_description">用于后台检测当前前台应用，并在通知栏点击时捕获屏幕截图与界面无障碍节点快照，供审查和生成 GKD 规则使用。</string>
+    <string name="capture_snapshot">抓取快照</string>
+    <string name="service_running">服务运行中</string>
+    <string name="snapshot_saved">快照已保存</string>
+</resources>
